@@ -19,14 +19,17 @@ interface ChatListProps {
   selectedChatId?: string
   onSelectChat: (chatId: string) => void
   onCreateChat: () => void
+  userId: string | undefined
 }
 
 export const ChatList: React.FC<ChatListProps> = ({
   selectedChatId,
   onSelectChat,
-  onCreateChat
+  onCreateChat,
+  userId
 }) => {
   const { data, loading, refetch } = useQuery(GET_CHATS, {
+    variables: { user_id: userId },
     pollInterval: 2000, // Poll every 2 seconds for updates
     fetchPolicy: 'cache-and-network' // Always fetch fresh data
   })
@@ -76,7 +79,7 @@ export const ChatList: React.FC<ChatListProps> = ({
                   {chat.title}
                 </div>
                 <div className="text-sm text-gray-500 flex justify-between items-center mt-1">
-                  <span>{chat.messages_aggregate.aggregate.count} messages</span>
+                  {/* <span>{chat.messages_aggregate.aggregate.count} messages</span> */}
                   <span>{new Date(chat.updated_at).toLocaleDateString()}</span>
                 </div>
               </button>

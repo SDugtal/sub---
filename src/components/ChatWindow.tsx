@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react'
 import { useQuery, useMutation, useSubscription, useApolloClient } from '@apollo/client'
 import { useUserId } from '@nhost/react'
-import { GET_CHAT_DETAILS } from '../graphql/queries'
+import { GET_CHATS } from '../graphql/queries'
 import { SEND_MESSAGE, SEND_MESSAGE_ACTION, UPDATE_CHAT_TIMESTAMP } from '../graphql/mutations'
 import { SUBSCRIBE_TO_MESSAGES } from '../graphql/subscriptions'
 import { MessageBubble } from './MessageBubble'
@@ -36,13 +36,18 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({ chatId }) => {
   const apolloClient = useApolloClient()
 
   // Query for chat details
-  const { data: chatData, loading: chatLoading, error: chatError } = useQuery(GET_CHAT_DETAILS, {
-    variables: { chat_id: chatId },
-    onError: (error) => {
-      console.error('Chat query error:', error)
-      setError('Failed to load chat details. Please refresh the page.')
-    }
-  })
+const { data: chatData, loading: chatLoading, error: chatError } = useQuery(GET_CHATS, {
+  variables: { user_id: userId },   // 👈 include user_id
+  skip: !userId,                                     // 👈 avoid running until userId is ready
+  onError: (error) => {
+    console.error('Chat query error:', error)
+    setError('Failed to load chat details. Please refresh the page.')
+  }
+})
+
+console.log(chatData);
+
+  
 
   // Subscription for real-time messages
   const { data: messagesData, error: subscriptionError } = useSubscription(SUBSCRIBE_TO_MESSAGES, {
@@ -229,7 +234,8 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({ chatId }) => {
     )
   }
 
-  const chat = chatData?.chats_by_pk
+ const chats = chatData?.chats || []
+const chat = chats.find((c: any) => c.id === chatId)
 
   return (
     <div className="flex-1 flex flex-col h-full">

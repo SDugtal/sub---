@@ -6,15 +6,11 @@
   import { CREATE_CHAT } from '../graphql/mutations'
   import { LogOut, MessageSquare } from 'lucide-react'
   import { useUserId } from '@nhost/react'
-
-
-
   export const ChatApp: React.FC = () => {
     const [selectedChatId, setSelectedChatId] = useState<string | undefined>()
     const [createChat] = useMutation(CREATE_CHAT)
     const { signOut } = useSignOut()
     const userId = useUserId()
-
     const handleCreateChat = async () => {
       try {
         const chatTitle = `Chat ${new Date().toLocaleDateString()}`
@@ -58,6 +54,7 @@
             selectedChatId={selectedChatId}
             onSelectChat={setSelectedChatId}
             onCreateChat={handleCreateChat}
+            userId={userId}
           />
         </div>
 

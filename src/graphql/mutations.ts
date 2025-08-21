@@ -1,5 +1,15 @@
 import { gql } from '@apollo/client'
 
+export const UPDATE_CHAT_TITLE = gql`
+  mutation UpdateChatTitle($chat_id: uuid!, $title: String!) {
+    update_chats_by_pk(pk_columns: { id: $chat_id }, _set: { title: $title }) {
+      id
+      title
+    }
+  }
+`
+
+
 export const CREATE_CHAT = gql`
   mutation CreateChat($title: String!, $user_id: uuid!) {
     insert_chats_one(object: { title: $title, user_id: $user_id }) {
