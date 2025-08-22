@@ -4,6 +4,7 @@ import { NhostProvider, useAuthenticated, useAuthenticationStatus } from '@nhost
 import { ApolloProvider } from '@apollo/client'
 import { nhost } from './lib/nhost'
 import { apolloClient } from './lib/apollo'
+import { ThemeProvider } from './contexts/ThemeContext'
 import { AuthForm } from './components/AuthForm'
 import { ChatApp } from './components/ChatApp'
 
@@ -13,10 +14,10 @@ const AppContent: React.FC = () => {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen bg-[rgb(245,245,240)] dark:bg-[rgb(30,30,30)] flex items-center justify-center transition-colors duration-300">
         <div className="text-center">
-          <div className="w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading...</p>
+          <div className="w-12 h-12 border-4 border-[rgb(191,114,46)] dark:border-[rgb(200,140,90)] border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-[rgb(100,100,100)] dark:text-[rgb(160,160,160)]">Loading...</p>
         </div>
       </div>
     )
@@ -34,7 +35,11 @@ function App() {
     <BrowserRouter>
       <NhostProvider nhost={nhost}>
         <ApolloProvider client={apolloClient}>
-          <AppContent />
+          <ThemeProvider>
+            <div className="font-sans antialiased">
+              <AppContent />
+            </div>
+          </ThemeProvider>
         </ApolloProvider>
       </NhostProvider>
     </BrowserRouter>
