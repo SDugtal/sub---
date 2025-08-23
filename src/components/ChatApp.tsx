@@ -48,7 +48,7 @@ export const ChatApp: React.FC = () => {
                 <span className="text-xl font-bold text-white">S</span>
               </div>
               <div>
-                <h1 className="text-xl font-bold text-[rgb(50,50,50)] dark:text-[rgb(220,220,220)]">SageSense Chat</h1>
+                <h1 className="text-xl font-bold text-[rgb(50,50,50)] dark:text-[rgb(220,220,220)]">SageSensei Chat</h1>
               </div>
             </div>
             <div className="flex items-center space-x-2">
@@ -104,7 +104,7 @@ export const ChatApp: React.FC = () => {
             <div className="w-8 h-8 bg-gradient-to-br from-[rgb(191,114,46)] to-[rgb(242,175,116)] dark:from-[rgb(150,90,36)] dark:to-[rgb(200,140,90)] rounded-lg flex items-center justify-center">
               <span className="text-lg font-bold text-white">S</span>
             </div>
-            <span className="font-semibold text-[rgb(50,50,50)] dark:text-[rgb(220,220,220)]">SageSense Chat</span>
+            <span className="font-semibold text-[rgb(50,50,50)] dark:text-[rgb(220,220,220)]">SageSensei Chat</span>
           </div>
         </div>
 

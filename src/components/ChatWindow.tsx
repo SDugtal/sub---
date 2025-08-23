@@ -293,7 +293,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({ chatId }) => {
                 Start the conversation
               </h3>
               <p className="text-[rgb(100,100,100)] dark:text-[rgb(160,160,160)]">
-                Send a message to begin chatting with SageSense AI assistant
+                Send a message to begin chatting with SageSensei AI assistant
               </p>
             </div>
           </div>
