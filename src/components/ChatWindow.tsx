@@ -224,7 +224,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({ chatId }) => {
             </div>
             <div>
               <h1 className="font-semibold text-[rgb(50,50,50)] dark:text-[rgb(220,220,220)]">
-                {chat?.title || 'SageSense Chat'}
+                {chat?.title || 'SageSensei Chat'}
               </h1>
               <p className="text-sm text-[rgb(100,100,100)] dark:text-[rgb(160,160,160)]">
                 {allMessages.length} messages

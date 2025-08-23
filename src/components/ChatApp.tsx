@@ -119,7 +119,7 @@ export const ChatApp: React.FC = () => {
                   <MessageSquare className="w-10 h-10 text-white" />
                 </div>
                 <h2 className="text-2xl font-bold text-[rgb(50,50,50)] dark:text-[rgb(220,220,220)] mb-4">
-                  Welcome to SageSense Chat
+                  Welcome to SageSensei Chat
                 </h2>
                 <p className="text-[rgb(100,100,100)] dark:text-[rgb(160,160,160)] mb-8">
                   Select a chat from the sidebar or create a new one to start your conversation with AI

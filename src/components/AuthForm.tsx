@@ -189,7 +189,7 @@ export const AuthForm: React.FC<AuthFormProps> = ({ onSuccess }) => {
             <span className="text-2xl font-bold text-white">S</span>
           </div>
           <h1 className="text-3xl font-bold text-[rgb(50,50,50)] dark:text-[rgb(220,220,220)] mb-2">
-            {isSignUp ? 'Join SageSense Chat' : 'Welcome Back'}
+            {isSignUp ? 'Join SageSensei Chat' : 'Welcome Back'}
           </h1>
           <p className="text-[rgb(100,100,100)] dark:text-[rgb(160,160,160)]">
             {isSignUp ? 'Create your account to start chatting' : 'Sign in to continue your conversations'}
