@@ -45,10 +45,10 @@ export const ChatApp: React.FC = () => {
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center space-x-3">
               <div className="w-10 h-10 bg-gradient-to-br from-[rgb(191,114,46)] to-[rgb(242,175,116)] dark:from-[rgb(150,90,36)] dark:to-[rgb(200,140,90)] rounded-lg flex items-center justify-center shadow-md">
-                <span className="text-xl font-bold text-white">K</span>
+                <span className="text-xl font-bold text-white">S</span>
               </div>
               <div>
-                <h1 className="text-xl font-bold text-[rgb(50,50,50)] dark:text-[rgb(220,220,220)]">Kirito Chat</h1>
+                <h1 className="text-xl font-bold text-[rgb(50,50,50)] dark:text-[rgb(220,220,220)]">SageSense Chat</h1>
               </div>
             </div>
             <div className="flex items-center space-x-2">
@@ -102,9 +102,9 @@ export const ChatApp: React.FC = () => {
           </button>
           <div className="flex items-center space-x-3">
             <div className="w-8 h-8 bg-gradient-to-br from-[rgb(191,114,46)] to-[rgb(242,175,116)] dark:from-[rgb(150,90,36)] dark:to-[rgb(200,140,90)] rounded-lg flex items-center justify-center">
-              <span className="text-lg font-bold text-white">K</span>
+              <span className="text-lg font-bold text-white">S</span>
             </div>
-            <span className="font-semibold text-[rgb(50,50,50)] dark:text-[rgb(220,220,220)]">Kirito Chat</span>
+            <span className="font-semibold text-[rgb(50,50,50)] dark:text-[rgb(220,220,220)]">SageSense Chat</span>
           </div>
         </div>
 
@@ -119,7 +119,7 @@ export const ChatApp: React.FC = () => {
                   <MessageSquare className="w-10 h-10 text-white" />
                 </div>
                 <h2 className="text-2xl font-bold text-[rgb(50,50,50)] dark:text-[rgb(220,220,220)] mb-4">
-                  Welcome to Kirito Chat
+                  Welcome to SageSense Chat
                 </h2>
                 <p className="text-[rgb(100,100,100)] dark:text-[rgb(160,160,160)] mb-8">
                   Select a chat from the sidebar or create a new one to start your conversation with AI

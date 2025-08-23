@@ -186,10 +186,10 @@ export const AuthForm: React.FC<AuthFormProps> = ({ onSuccess }) => {
         {/* Logo */}
         <div className="text-center mb-8">
           <div className="w-16 h-16 bg-gradient-to-br from-[rgb(191,114,46)] to-[rgb(242,175,116)] dark:from-[rgb(150,90,36)] dark:to-[rgb(200,140,90)] rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg">
-            <span className="text-2xl font-bold text-white">K</span>
+            <span className="text-2xl font-bold text-white">S</span>
           </div>
           <h1 className="text-3xl font-bold text-[rgb(50,50,50)] dark:text-[rgb(220,220,220)] mb-2">
-            {isSignUp ? 'Join Kirito Chat' : 'Welcome Back'}
+            {isSignUp ? 'Join SageSense Chat' : 'Welcome Back'}
           </h1>
           <p className="text-[rgb(100,100,100)] dark:text-[rgb(160,160,160)]">
             {isSignUp ? 'Create your account to start chatting' : 'Sign in to continue your conversations'}

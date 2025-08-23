@@ -2,7 +2,10 @@ import { gql } from '@apollo/client'
 
 export const GET_CHATS = gql`
 query MyQuery($user_id: uuid!) {
-  chats(where: {user_id: {_eq: $user_id}}) {
+  chats(
+    where: {user_id: {_eq: $user_id}}
+     order_by: { created_at: desc }
+    ) {
     title
     id
     created_at
