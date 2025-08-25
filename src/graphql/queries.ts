@@ -15,6 +15,18 @@ query MyQuery($user_id: uuid!) {
 }
 `
 
+export const GET_CHAT_DETAILS = gql`
+  query GetChatDetails($chat_id: uuid!) {
+    chats_by_pk(id: $chat_id) {
+      id
+      title
+      created_at
+      updated_at
+      user_id
+    }
+  }
+`
+
 export const GET_MESSAGES = gql`
   query GetMessages($chat_id: uuid!) {
     messages(

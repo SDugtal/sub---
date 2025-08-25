@@ -5,7 +5,7 @@ import { GET_CHATS } from '../graphql/queries'
 import { SEND_MESSAGE, SEND_MESSAGE_ACTION, UPDATE_CHAT_TIMESTAMP } from '../graphql/mutations'
 import { SUBSCRIBE_TO_MESSAGES } from '../graphql/subscriptions'
 import { MessageBubble } from './MessageBubble'
-import { Send, MessageSquare, AlertCircle, RefreshCw, Settings } from 'lucide-react'
+import { Send, MessageSquare, AlertCircle, RefreshCw } from 'lucide-react'
 
 interface ChatWindowProps {
   chatId: string
@@ -31,20 +31,23 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({ chatId }) => {
   const [isSending, setIsSending] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [optimisticMessages, setOptimisticMessages] = useState<Message[]>([])
-  const [showDebug, setShowDebug] = useState(false)
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const userId = useUserId()
   const apolloClient = useApolloClient()
 
   // Query for chat details
-  const { data: chatData, loading: chatLoading, error: chatError } = useQuery(GET_CHATS, {
-    variables: { user_id: userId },
-    skip: !userId,
-    onError: (error) => {
-      console.error('Chat query error:', error)
-      setError('Failed to load chat details. Please refresh the page.')
-    }
-  })
+const { data: chatData, loading: chatLoading, error: chatError } = useQuery(GET_CHATS, {
+  variables: { user_id: userId },   // 👈 include user_id
+  skip: !userId,                                     // 👈 avoid running until userId is ready
+  onError: (error) => {
+    console.error('Chat query error:', error)
+    setError('Failed to load chat details. Please refresh the page.')
+  }
+})
+
+console.log(chatData);
+
+  
 
   // Subscription for real-time messages
   const { data: messagesData, error: subscriptionError } = useSubscription(SUBSCRIBE_TO_MESSAGES, {
@@ -65,6 +68,8 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({ chatId }) => {
   const [sendMessage] = useMutation(SEND_MESSAGE, {
     onError: (error) => {
       console.error('Send message error:', error)
+      console.error('GraphQL errors:', error.graphQLErrors)
+      console.error('Network error:', error.networkError)
       setError('Failed to send message. Please try again.')
     }
   })
@@ -75,6 +80,9 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({ chatId }) => {
     },
     onError: (error) => {
       console.error('Message action error:', error)
+      console.error('GraphQL errors:', error.graphQLErrors)
+      console.error('Network error:', error.networkError)
+      console.error('Full error details:', JSON.stringify(error, null, 2))
       setError('Failed to trigger AI response. Please try again.')
     }
   })
@@ -103,6 +111,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({ chatId }) => {
 
     const messageContent = message.trim()
     const tempId = `temp-${Date.now()}`
+
     const optimisticMessage: Message = {
       id: tempId,
       content: messageContent,
@@ -117,6 +126,13 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({ chatId }) => {
     setError(null)
 
     try {
+      // Insert user message
+      console.log('Sending message with variables:', {
+        chat_id: chatId,
+        content: messageContent,
+        user_id: userId
+      })
+
       const messageResult = await sendMessage({
         variables: {
           chat_id: String(chatId),
@@ -125,15 +141,22 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({ chatId }) => {
         }
       })
 
+      console.log('Message result:', messageResult)
+
+      // Update chat timestamp (best-effort)
       await updateChatTimestamp({
         variables: { chat_id: String(chatId) }
       })
 
+      // Extract inserted message id and ensure it's present
       const userMessageId = messageResult?.data?.insert_messages_one?.id
       if (!userMessageId) {
         throw new Error('Failed to obtain inserted message id')
       }
 
+      console.log('User message ID:', userMessageId, 'Type:', typeof userMessageId)
+
+      // Ensure all variables are properly typed for the action
       const actionVariables = {
         chat_id: String(chatId),
         message: String(messageContent),
@@ -141,14 +164,19 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({ chatId }) => {
         message_id: String(userMessageId)
       }
 
+      console.log('Sending action with variables:', actionVariables)
+
+      // Trigger bot action (Hasura action/webhook)
       await sendMessageAction({
         variables: actionVariables
       })
 
+      // Success: optimistic message will be replaced by subscription
       console.log('Message sent; bot action triggered')
     } catch (err) {
       console.error('Error in send flow:', err)
       setError('Failed to send message. Please try again.')
+      // restore typed message and clear optimistic UI
       setMessage(messageContent)
       setOptimisticMessages([])
     } finally {
@@ -178,10 +206,10 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({ chatId }) => {
   // Loading state
   if (chatLoading) {
     return (
-      <div className="h-full flex items-center justify-center bg-[rgb(250,248,245)] dark:bg-[rgb(25,25,25)]">
+      <div className="flex-1 flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-4 border-[rgb(191,114,46)] dark:border-[rgb(200,140,90)] border-t-transparent mx-auto mb-4"></div>
-          <p className="text-[rgb(100,100,100)] dark:text-[rgb(160,160,160)]">Loading chat...</p>
+          <RefreshCw className="w-8 h-8 mx-auto mb-2 text-gray-400 animate-spin" />
+          <p className="text-gray-500">Loading chat...</p>
         </div>
       </div>
     )
@@ -190,18 +218,14 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({ chatId }) => {
   // Error state for critical chat loading failure
   if (chatError && !chatData) {
     return (
-      <div className="h-full flex items-center justify-center bg-[rgb(250,248,245)] dark:bg-[rgb(25,25,25)]">
-        <div className="text-center max-w-md mx-auto p-8">
-          <AlertCircle className="w-16 h-16 text-red-500 mx-auto mb-4" />
-          <h2 className="text-xl font-semibold text-[rgb(50,50,50)] dark:text-[rgb(220,220,220)] mb-2">
-            Failed to Load Chat
-          </h2>
-          <p className="text-[rgb(100,100,100)] dark:text-[rgb(160,160,160)] mb-6">
-            There was an error loading this chat.
-          </p>
+      <div className="flex-1 flex items-center justify-center">
+        <div className="text-center">
+          <AlertCircle className="w-12 h-12 mx-auto mb-4 text-red-400" />
+          <h3 className="text-lg font-medium text-gray-900 mb-2">Failed to Load Chat</h3>
+          <p className="text-gray-500 mb-4">There was an error loading this chat.</p>
           <button
             onClick={handleRetry}
-            className="bg-gradient-to-r from-[rgb(191,114,46)] to-[rgb(242,175,116)] dark:from-[rgb(150,90,36)] dark:to-[rgb(200,140,90)] text-white py-2 px-4 rounded-xl font-medium hover:shadow-lg transition-all duration-300"
+            className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
           >
             Try Again
           </button>
@@ -210,69 +234,49 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({ chatId }) => {
     )
   }
 
-  const chats = chatData?.chats || []
-  const chat = chats.find((c: any) => c.id === chatId)
+ const chats = chatData?.chats || []
+const chat = chats.find((c: any) => c.id === chatId)
 
   return (
-    <div className="h-full flex flex-col bg-[rgb(250,248,245)] dark:bg-[rgb(25,25,25)] transition-colors duration-300">
+    <div className="flex-1 flex flex-col h-full">
       {/* Header */}
-      <div className="p-4 border-b border-[rgb(230,230,225)] dark:border-[rgb(50,50,50)] bg-white dark:bg-[rgb(40,40,40)]">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-3">
-            <div className="w-10 h-10 bg-gradient-to-br from-[rgb(191,114,46)] to-[rgb(242,175,116)] dark:from-[rgb(150,90,36)] dark:to-[rgb(200,140,90)] rounded-lg flex items-center justify-center shadow-md">
-              <span className="text-lg font-bold text-white">S</span>
-            </div>
-            <div>
-              <h1 className="font-semibold text-[rgb(50,50,50)] dark:text-[rgb(220,220,220)]">
-                {chat?.title || 'SageSensei Chat'}
-              </h1>
-              <p className="text-sm text-[rgb(100,100,100)] dark:text-[rgb(160,160,160)]">
-                {allMessages.length} messages
-              </p>
-            </div>
-          </div>
+      <div className="bg-white border-b border-gray-200 p-4">
+        <h2 className="text-lg font-semibold text-gray-900">
+          {chat?.title || 'Chat'}
+        </h2>
+        <p className="text-sm text-gray-500">
+          {allMessages.length} messages
+        </p>
+        {/* Debug info - remove in production */}
+        <div className="text-xs text-gray-400 mt-1">
+          Chat ID: {chatId?.slice(0, 8)}...
           <button
-            onClick={() => setShowDebug(!showDebug)}
-            className="p-2 rounded-lg bg-[rgb(248,248,245)] dark:bg-[rgb(35,35,35)] hover:bg-[rgb(240,240,235)] dark:hover:bg-[rgb(45,45,45)] transition-colors duration-300"
+            onClick={handleClearCache}
+            className="ml-2 text-blue-500 underline hover:text-blue-700"
           >
-            <Settings className="w-4 h-4 text-[rgb(100,100,100)] dark:text-[rgb(160,160,160)]" />
+            Clear Cache
           </button>
         </div>
-
-        {/* Debug Panel */}
-        {showDebug && (
-          <div className="mt-4 p-3 bg-[rgb(248,248,245)] dark:bg-[rgb(35,35,35)] rounded-lg border border-[rgb(220,150,80)] dark:border-[rgb(200,140,90)]">
-            <div className="flex items-center justify-between text-xs text-[rgb(100,100,100)] dark:text-[rgb(160,160,160)]">
-              <span>Chat ID: {chatId?.slice(0, 8)}...</span>
-              <button
-                onClick={handleClearCache}
-                className="text-[rgb(191,114,46)] dark:text-[rgb(200,140,90)] hover:underline"
-              >
-                Clear Cache
-              </button>
-            </div>
-          </div>
-        )}
       </div>
 
       {/* Error Banner */}
       {error && (
-        <div className="p-4 bg-red-50 dark:bg-red-900/20 border-b border-red-200 dark:border-red-800">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-2">
-              <AlertCircle className="w-5 h-5 text-red-600 dark:text-red-400" />
-              <span className="text-red-700 dark:text-red-300 text-sm">{error}</span>
+        <div className="bg-red-50 border-l-4 border-red-400 p-4">
+          <div className="flex items-center">
+            <AlertCircle className="w-5 h-5 text-red-400 mr-3" />
+            <div className="flex-1">
+              <p className="text-sm text-red-700">{error}</p>
             </div>
-            <div className="flex items-center space-x-2">
+            <div className="flex gap-2">
               <button
                 onClick={handleRetry}
-                className="text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300 text-sm font-medium"
+                className="text-red-600 hover:text-red-800 text-sm underline"
               >
                 Retry
               </button>
               <button
                 onClick={clearError}
-                className="text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300 text-sm"
+                className="text-red-600 hover:text-red-800 text-sm underline"
               >
                 Dismiss
               </button>
@@ -282,83 +286,84 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({ chatId }) => {
       )}
 
       {/* Messages Container */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-4">
+      <div className="flex-1 overflow-y-auto p-4 bg-gray-50">
         {allMessages.length === 0 ? (
           <div className="h-full flex items-center justify-center">
-            <div className="text-center max-w-md mx-auto">
-              <div className="w-16 h-16 bg-gradient-to-br from-[rgb(191,114,46)] to-[rgb(242,175,116)] dark:from-[rgb(150,90,36)] dark:to-[rgb(200,140,90)] rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg">
-                <span className="text-2xl font-bold text-white">S</span>
-              </div>
-              <h3 className="text-xl font-semibold text-[rgb(50,50,50)] dark:text-[rgb(220,220,220)] mb-2">
-                Start the conversation
-              </h3>
-              <p className="text-[rgb(100,100,100)] dark:text-[rgb(160,160,160)]">
-                Send a message to begin chatting with SageSensei AI assistant
-              </p>
+            <div className="text-center text-gray-500">
+              <MessageSquare className="w-12 h-12 mx-auto mb-4 text-gray-300" />
+              <h3 className="text-lg font-medium text-gray-900 mb-2">Start the conversation</h3>
+              <p>Send a message to begin chatting with the AI assistant</p>
             </div>
           </div>
         ) : (
-          <>
+          <div className="space-y-4">
             {allMessages.map((msg: Message) => (
               <MessageBubble
                 key={msg.id}
                 message={msg}
                 currentUserId={userId}
+                isOptimistic={msg.id.startsWith('temp-')}
               />
             ))}
+            
             {/* Typing indicator */}
             {isSending && (
-              <div className="flex items-center space-x-3">
-                <div className="w-8 h-8 bg-gradient-to-br from-[rgb(191,114,46)] to-[rgb(242,175,116)] dark:from-[rgb(150,90,36)] dark:to-[rgb(200,140,90)] rounded-full flex items-center justify-center shadow-md">
-                  <span className="text-sm font-bold text-white">K</span>
+              <div className="flex items-start gap-3 mb-6">
+                <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
+                  <MessageSquare className="w-4 h-4 text-blue-600" />
                 </div>
-                <div className="bg-white dark:bg-[rgb(40,40,40)] rounded-2xl p-4 shadow-md border border-[rgb(230,230,225)] dark:border-[rgb(50,50,50)]">
-                  <div className="flex space-x-1">
-                    <div className="w-2 h-2 bg-[rgb(191,114,46)] dark:bg-[rgb(200,140,90)] rounded-full animate-bounce"></div>
-                    <div className="w-2 h-2 bg-[rgb(191,114,46)] dark:bg-[rgb(200,140,90)] rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
-                    <div className="w-2 h-2 bg-[rgb(191,114,46)] dark:bg-[rgb(200,140,90)] rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
+                <div className="bg-blue-100 text-blue-900 px-4 py-2 rounded-lg max-w-xs">
+                  <div className="flex items-center gap-1">
+                    <span className="text-sm">AI is thinking</span>
+                    <div className="flex gap-1 ml-2">
+                      <div className="w-1 h-1 bg-blue-500 rounded-full animate-bounce"></div>
+                      <div className="w-1 h-1 bg-blue-500 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
+                      <div className="w-1 h-1 bg-blue-500 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
+                    </div>
                   </div>
                 </div>
               </div>
             )}
+            
+            {/* Scroll anchor */}
             <div ref={messagesEndRef} />
-          </>
+          </div>
         )}
       </div>
 
       {/* Message Input */}
-      <div className="p-4 border-t border-[rgb(230,230,225)] dark:border-[rgb(50,50,50)] bg-white dark:bg-[rgb(40,40,40)]">
-        <form onSubmit={handleSendMessage} className="flex items-center space-x-3">
-          <div className="flex-1">
-            <input
-              type="text"
-              value={message}
-              onChange={(e) => setMessage(e.target.value)}
-              placeholder="Type your message..."
-              disabled={isSending || !userId}
-              className="w-full px-4 py-3 bg-[rgb(248,248,245)] dark:bg-[rgb(35,35,35)] border border-[rgb(220,150,80)] dark:border-[rgb(200,140,90)] rounded-xl focus:ring-2 focus:ring-[rgb(191,114,46)] dark:focus:ring-[rgb(200,140,90)] focus:border-transparent disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300 text-[rgb(50,50,50)] dark:text-[rgb(220,220,220)] placeholder-[rgb(120,120,120)] dark:placeholder-[rgb(140,140,140)]"
-            />
-          </div>
+      <div className="bg-white border-t border-gray-200 p-4">
+        <form onSubmit={handleSendMessage} className="flex gap-2">
+          <input
+            type="text"
+            value={message}
+            onChange={(e) => setMessage(e.target.value)}
+            placeholder="Type your message..."
+            disabled={isSending || !userId}
+            className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          />
           <button
             type="submit"
-            disabled={isSending || !userId || !message.trim()}
-            className="bg-gradient-to-r from-[rgb(191,114,46)] to-[rgb(242,175,116)] dark:from-[rgb(150,90,36)] dark:to-[rgb(200,140,90)] text-white p-3 rounded-xl font-medium hover:shadow-lg transform hover:-translate-y-0.5 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none disabled:hover:shadow-none flex items-center space-x-2"
+            disabled={!message.trim() || isSending || !userId}
+            className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center gap-2"
           >
             {isSending ? (
               <>
-                <div className="animate-spin rounded-full h-5 w-5 border-2 border-white border-t-transparent"></div>
+                <RefreshCw className="w-4 h-4 animate-spin" />
                 <span className="hidden sm:inline">Sending...</span>
               </>
             ) : (
               <>
-                <Send className="w-5 h-5" />
+                <Send className="w-4 h-4" />
                 <span className="hidden sm:inline">Send</span>
               </>
             )}
           </button>
         </form>
+        
         {!userId && (
-          <p className="text-center text-red-500 dark:text-red-400 text-sm mt-2">
+          <p className="text-xs text-red-500 mt-2 flex items-center gap-1">
+            <AlertCircle className="w-3 h-3" />
             Please log in to send messages
           </p>
         )}
